@@ -1,0 +1,62 @@
+version: "3.4"
+
+services:
+
+    nginx-proxy:
+        image: nginx:1.13
+        hostname: nginx
+        ports:
+            - 80:80
+            - 443:443
+        networks:
+            - proxy
+        volumes:
+            - /data/nginx_proxy/:/etc/nginx/conf.d/
+
+    nexus:
+        image: sonatype/nexus3:3.9.0
+        hostname: nexus
+        environment:
+            - NEXUS_CONTEXT=nexus
+        networks:
+            - proxy
+        volumes:
+            - /data/nexus3/nexus_data:/nexus-data
+
+    registry:
+        image: registry:2.6
+        hostname: registry
+        environment:
+            REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+        networks:
+            - proxy
+        volumes:
+            - /data/registry2/registry_data:/data
+
+    jenkins:
+        image: quay.io/shazchaudhry/docker-jenkins:latest
+        user: root
+        hostname: jenkins
+        environment:
+            - JENKINS_OPTS='--prefix=/jenkins'
+        ports:
+            - "50000:50000"  
+        networks:
+            - proxy
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - /usr/bin/docker:/usr/bin/docker
+            - /data/jenkins2/jenkins_home:/var/jenkins_home
+
+    portainer:
+        image: portainer/portainer:latest
+        hostname: portainer
+        networks:
+            - proxy
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        command: --no-auth -H unix:///var/run/docker.sock
+
+
+networks:
+    proxy:
